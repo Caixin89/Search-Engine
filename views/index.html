@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Chai's Search Engine</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/jquery-ui.css">
+
+    <!-- Custom CSS -->
+    <style>
+    body {
+        padding-top: 70px;
+        /* Required padding for .navbar-fixed-top. Remove if using .navbar-static-top. Change if height of navigation changes. */
+    }
+    #submit {
+	display: inline-block;
+    }
+    .resultTitle {
+	margin:0;
+	padding: 0;
+	text-align: left;
+	font-weight: bold;
+	font-size:150%;
+    }  
+    .resultUrl {
+	margin:0;
+	padding: 0;
+	text-align: left;
+	font-style: italic;
+	font-size:115%;
+	color:green;
+    }  
+    .resultSnippet {
+	margin:0;
+	padding: 0;
+	text-align: left;
+	font-size:125%;
+    }   
+    #rankingDiv {
+	display: inline-block;
+    	margin-top:10px;
+	margin-left:29%;
+    }
+    </style>
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+        <div class="container">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="index.html">Home</a>
+            </div>
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav">
+                    <li>
+                        <a href="about.html">About</a>
+                    </li>
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container -->
+    </nav>
+
+    <!-- Page Content -->
+    <div class="container">
+
+        <div class="row">
+            <div class="col-lg-12 text-center" id="bodycenter">
+		<img id="profilepic" style="padding-top:20px" src="pictures/profilepic.jpg" height="300px"></img>
+                <h1>Chai's Search Engine</h1>
+		<form action="/result.html">
+			<div class="ui-widget" style="font-size:125%">
+				<label for="Query">Query: </label>
+				<input type="text" name="Query" size="50" id="Query"><br>
+			</div>
+			<div id="rankingDiv">
+				Ranking:
+				<select name="Ranking" id="Ranking">
+					<option value="default">Default</option>
+					<option value="pr">Page Rank</option>
+				</select>
+			</div>	
+			<input type="hidden" name="Spell" value="true" />
+		    	<input type="submit" value="Submit" id="submit" onclick="return isInputFilled()"/>		
+		</form>
+            </div>
+        </div>
+        <!-- /.row -->
+
+    </div>
+    <!-- /.container -->
+
+    <!-- jQuery Version 1.11.1 -->
+    <script src="js/jquery.js"></script>
+    <script src="js/jquery-ui.js"></script>
+    
+	<script>
+		function isInputFilled(input) {
+			if ($("#Query").val())
+			{
+				return true;
+			}
+			return false;
+		}
+	  $( function() {
+			function getParameterByName(name, url) {
+			    if (!url) url = window.location.href;
+			    name = name.replace(/[\[\]]/g, "\\$&");
+			    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+				results = regex.exec(url);
+			    if (!results) return null;
+			    if (!results[2]) return '';
+			    return decodeURIComponent(results[2].replace(/\+/g, " "));
+			}
+		    function split( val ) {
+		      return val.split( /\s+/ );
+		    }
+		    function extractLast( term ) {
+		      return split( term ).pop();
+		    }
+		 
+		    $( "#Query" )
+		      // don't navigate away from the field on tab when selecting an item
+		      .on( "keydown", function( event ) {
+			if ( event.keyCode === $.ui.keyCode.TAB &&
+			    $( this ).autocomplete( "instance" ).menu.active ) {
+			  event.preventDefault();
+			}
+		      })
+		      .autocomplete({
+			source: function( request, response ) {
+			  var term = extractLast( request.term ).toLowerCase();
+			  $.getJSON( "suggest", {
+			    Param1: term
+			  },  function(data) {
+				var suggestion = [];
+				var terms = [];
+				var terms = split($('#Query').val());
+				var prefix = terms.slice(0, terms.length - 1).join(" ") + " ";
+				var numOfSuggestions = 0;
+				var maxNumOfSuggestions = 5;
+				for (var i = 0; i < data.suggest.suggest[term].numFound; ++i)
+				{
+					if (/^[a-z]+$/i.exec(data.suggest.suggest[term].suggestions[i].term))
+					{
+						var newString = prefix + data.suggest.suggest[term].suggestions[i].term;
+						suggestion.push(newString.trim());
+						++numOfSuggestions;
+					}
+					if (numOfSuggestions == maxNumOfSuggestions)
+					{
+						break;
+					}
+				}
+				response(suggestion);
+			  });
+			},
+			search: function() {
+			  // custom minLength
+			  var term = extractLast( this.value );
+			  if ( term.length < 2 ) {
+			    return false;
+			  }
+			},
+			focus: function(event, ui) {
+			  this.value = ui.item.value;
+			  return false;
+			},
+			select: function( event, ui ) {
+			  this.value = ui.item.value;
+			  return false;
+			}
+		      });
+			  $('#Query').val(getParameterByName('Query'));
+		          var ranking = getParameterByName('Ranking');
+		          var exists = 0 != $('#Ranking option[value='+ranking+']').length;
+			  if (exists)
+		          {
+			  	$('#Ranking').val(ranking);   
+		          }
+		  });
+	</script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="js/bootstrap.js"></script>
+
+</body>
+
+</html>
