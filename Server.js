@@ -237,7 +237,7 @@ function generateSpellCorrectHtml(suggestion, query, ranking) {
 }
 
 function getSpellCorrect(query) {
-	var terms = query.split(/\s+/);
+	var terms = query.toLowerCase().split(/\s+/);
 	var correctedTerms = spellChecker.correct.apply(this, terms);
 	var str = "";
 	for (var i = 0; i < terms.length; ++i)
@@ -259,7 +259,7 @@ function searchAndDisplay(query,res, start, rows, ranking, spellcheck) {
 	if (spellcheck != "false")
 	{
 		var suggestedSpelling = getSpellCorrect(query);
-		if (suggestedSpelling != query)
+		if (suggestedSpelling != query.toLowerCase())
 		{
 			suggestionHtml = generateSpellCorrectHtml(suggestedSpelling, query, ranking);
 			query = suggestedSpelling;
